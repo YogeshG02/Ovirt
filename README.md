@@ -755,5 +755,70 @@ The Oracle guide is a reference only. Validate all commands, variables and repos
 | Fencing method | TBD |
 
 ---
+## 14. Answers file  sample
+[root@ovirt-engine ~]# cat /root/ovirt-deploy/answers.conf
+[environment:default]
+OVEHOSTED_CORE/deployProceed=bool:True
+OVEHOSTED_CORE/enableKeycloak=bool:none:None
+OVEHOSTED_CORE/forceIpProceed=str:yes
+OVEHOSTED_CORE/screenProceed=bool:True
+OVEHOSTED_ENGINE/clusterName=str:Default
+OVEHOSTED_ENGINE/datacenterName=str:Default
+OVEHOSTED_ENGINE/enableHcGlusterService=none:None
+OVEHOSTED_ENGINE/insecureSSL=none:None
+OVEHOSTED_NETWORK/bridgeName=str:ovirtmgmt
+OVEHOSTED_NETWORK/fqdn=str:ovirt1-engine.swan.local
+OVEHOSTED_NETWORK/gateway=str:10.1.*.*     
+OVEHOSTED_NETWORK/network_test=str:dns
+OVEHOSTED_NETWORK/network_test_tcp_address=none:None
+OVEHOSTED_NETWORK/network_test_tcp_port=none:None
+OVEHOSTED_NOTIF/destEmail=str:root@localhost
+OVEHOSTED_NOTIF/smtpPort=str:25
+OVEHOSTED_NOTIF/smtpServer=str:localhost
+OVEHOSTED_NOTIF/sourceEmail=str:root@localhost
+OVEHOSTED_STORAGE/LunID=none:None
+OVEHOSTED_STORAGE/discardSupport=bool:False
+OVEHOSTED_STORAGE/domainType=none:None
+OVEHOSTED_STORAGE/iSCSIDiscoverUser=none:None
+OVEHOSTED_STORAGE/iSCSIPortal=none:None
+OVEHOSTED_STORAGE/iSCSIPortalIPAddress=none:None
+OVEHOSTED_STORAGE/iSCSIPortalPort=none:None
+OVEHOSTED_STORAGE/iSCSIPortalUser=none:None
+OVEHOSTED_STORAGE/iSCSITargetName=none:None
+OVEHOSTED_STORAGE/imgSizeGB=none:None
+OVEHOSTED_STORAGE/imgUUID=str:790049e2-f82f-482d-8cd5-8cfbe078abc3
+OVEHOSTED_STORAGE/lockspaceImageUUID=none:None
+OVEHOSTED_STORAGE/lockspaceVolumeUUID=none:None
+OVEHOSTED_STORAGE/metadataImageUUID=none:None
+OVEHOSTED_STORAGE/metadataVolumeUUID=none:None
+OVEHOSTED_STORAGE/mntOptions=none:None
+OVEHOSTED_STORAGE/nfsVersion=none:None
+OVEHOSTED_STORAGE/storageDomainConnection=none:None
+OVEHOSTED_STORAGE/storageDomainName=str:hosted_storage
+OVEHOSTED_STORAGE/volUUID=str:ec9cb81b-19df-4acf-a5a4-17cf46f46d4d
+OVEHOSTED_VM/OpenScapProfileName=none:None
+OVEHOSTED_VM/applyOpenScapProfile=bool:False
+OVEHOSTED_VM/automateVMShutdown=bool:True
+OVEHOSTED_VM/cdromUUID=str:327f44be-7476-41a2-a243-efa396ff1e3f
+OVEHOSTED_VM/cloudInitISO=str:generate
+OVEHOSTED_VM/cloudinitExecuteEngineSetup=bool:True
+OVEHOSTED_VM/cloudinitInstanceDomainName=str:swan.local
+OVEHOSTED_VM/cloudinitInstanceHostName=str:ovirt1-engine.swan.local
+OVEHOSTED_VM/cloudinitVMDNS=str:10.1.*.*   -- DNS IP 
+OVEHOSTED_VM/cloudinitVMETCHOSTS=bool:True
+OVEHOSTED_VM/cloudinitVMStaticCIDR=str:10.1.5.*/24   - Host IP 
+OVEHOSTED_VM/cloudinitVMTZ=str:Etc/UTC
+OVEHOSTED_VM/consoleUUID=str:f799bc43-0295-49f8-9e41-7662f78ece61
+OVEHOSTED_VM/emulatedMachine=str:pc
+OVEHOSTED_VM/enableFips=bool:False
+OVEHOSTED_VM/nicUUID=str:e54b1964-3e61-4acd-95a7-32a743d3ee04
+OVEHOSTED_VM/ovfArchive=str:
+OVEHOSTED_VM/rootSshAccess=str:yes
+OVEHOSTED_VM/rootSshPubkey=str:
+OVEHOSTED_VM/vmCDRom=none:None
+OVEHOSTED_VM/vmMACAddr=str:00:16:3e:1e:f4:1c
+OVEHOSTED_VM/vmMemSizeMB=int:4096
+OVEHOSTED_VM/vmVCpus=str:3
+[root@ovirt-engine ~]# 
 
 
