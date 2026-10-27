@@ -756,14 +756,4 @@ The Oracle guide is a reference only. Validate all commands, variables and repos
 
 ---
 
-## Security Note for This Repository
 
-Do not commit passwords, answer files, Engine backups, private keys, or real internal IP/hostname inventories. Suggested `.gitignore`:
-
-```
-answers.conf
-*.tar.bz2
-*.key
-*.pem
-extra-vars.yml
-```
