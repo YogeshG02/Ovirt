@@ -53,38 +53,61 @@ The Engine VM runs on an eligible cluster node and can be restarted on another e
 
 ```mermaid
 flowchart TB
-    ADMIN["Administrator<br/>Web Browser / SSH"]
-    DNS["External DNS / NTP"]
-    SW["Redundant Physical Switches"]
+    ADMIN["Administrator<br/>Browser / SSH"]
+    FENCE["Out-of-band management<br/>IPMI / iDRAC / iLO"]
 
-    subgraph CLUSTER["oVirt Cluster"]
-        N1["Node 1<br/>Hypervisor"]
-        N2["Node 2<br/>Hypervisor"]
-        N3["Node 3<br/>Hypervisor"]
-        ENGINE["Self-Hosted Engine VM<br/>Central Management"]
+    subgraph H1["HOST 1"]
+        direction LR
+        V1["VDSM"]
+        HA1["HA services"]
+        subgraph VMS1["Virtual machines"]
+            direction LR
+            A1["VM 1"]
+            M1["Manager<br/>self-hosted Engine VM"]
+            A2["VM 2"]
+        end
     end
 
-    SAN["Shared SAN<br/>FC or iSCSI"]
-    FENCE["Out-of-Band Management<br/>IPMI / iDRAC / iLO"]
+    subgraph H2["HOST 2"]
+        direction LR
+        V2["VDSM"]
+        HA2["HA services"]
+        subgraph VMS2["Virtual machines"]
+            direction LR
+            A3["VM 3"]
+            A4["VM 4"]
+        end
+    end
 
-    ADMIN -->|"VLAN 10 - Management"| SW
-    DNS --> SW
-    SW --- N1
-    SW --- N2
-    SW --- N3
+    subgraph H3["HOST 3"]
+        direction LR
+        V3["VDSM"]
+        HA3["HA services"]
+        subgraph VMS3["Virtual machines"]
+            direction LR
+            A5["VM 5"]
+            A6["VM 6"]
+        end
+    end
 
-    N1 -.-> ENGINE
-    N2 -.-> ENGINE
-    N3 -.-> ENGINE
+    SAN[("Shared Storage<br/>FC / iSCSI SAN")]
 
-    N1 -->|"Shared storage path"| SAN
-    N2 -->|"Shared storage path"| SAN
-    N3 -->|"Shared storage path"| SAN
+    ADMIN -->|"HTTPS 443 - VLAN 10"| M1
+    H1 ==> SAN
+    H2 ==> SAN
+    H3 ==> SAN
+    H1 -.-> FENCE
+    H2 -.-> FENCE
+    H3 -.-> FENCE
 
-    N1 -.-> FENCE
-    N2 -.-> FENCE
-    N3 -.-> FENCE
+    style H1 fill:#e8e8e8,stroke:#0088ce,stroke-width:2px
+    style H2 fill:#e8e8e8,stroke:#0088ce,stroke-width:2px
+    style H3 fill:#e8e8e8,stroke:#0088ce,stroke-width:2px
+    style M1 stroke:#0088ce,stroke-width:3px,stroke-dasharray:5 3
+    style SAN fill:#cccccc,stroke:#666666
 ```
+
+Each host runs **VDSM** (the agent the Engine uses to manage the host) and the **HA services** (`ovirt-ha-agent` / `ovirt-ha-broker`) that monitor and restart the Engine VM. The **Manager** is the self-hosted Engine VM: it runs on one host at a time and lives on shared storage, so HA services can restart it on Host 2 or Host 3 if Host 1 fails. All three hosts connect to the same shared SAN storage. Fencing lets the cluster safely power off or isolate a failed host before restarting its workloads.
 
 ### Architecture components
 
@@ -134,6 +157,91 @@ Recommendations:
 - Use a separate, protected management network for IPMI / iDRAC / iLO fencing.
 
 > **Storage distinction:** Fibre Channel uses SAN fabrics, zoning and LUN masking. It does **not** use an Ethernet VLAN. VLAN 30 applies only to Ethernet-based storage such as iSCSI.
+
+### VM network connectivity options (host network diagrams)
+
+oVirt can connect VMs to the physical network in three ways. Green boxes are configured by the oVirt host network configuration.
+
+#### Linux Bridge (default)
+
+VMs attach through a virtual NIC to a Linux bridge that oVirt creates on the host. VLAN tagging is applied on the host and traffic leaves through the NIC driver to the Ethernet port.
+
+```mermaid
+flowchart TB
+    subgraph HOST["Host"]
+        VMA["VM"] --> VNA["Virtual NIC driver"]
+        VMB["VM"] --> VNB["Virtual NIC driver"]
+        VNA --> BRA["Linux Bridge"]
+        VNB --> BRB["Linux Bridge"]
+        BRB --> VT["VLAN tagging"]
+        BRA --> NICD["NIC driver"]
+        VT --> NICD
+        subgraph NICBOX["NIC"]
+            NICD
+        end
+        NICD --> PORT["Ethernet port"]
+    end
+
+    classDef ovirt fill:#5fb30f,stroke:#000000,stroke-width:2px,color:#000000
+    class BRA,BRB,VT ovirt
+```
+
+#### SR-IOV
+
+VMs use a **Virtual Function (VF)** driver that talks directly to the NIC's embedded switch, bypassing the host bridge. The host keeps the **Physical Function (PF)** driver. VLAN tagging is configured on the NIC.
+
+```mermaid
+flowchart TB
+    subgraph HOST["Host"]
+        VMA["VM"] --> VFA["Virtual Function driver"]
+        VMB["VM"] --> VFB["Virtual Function driver"]
+        PFD["Physical Function driver"]
+        subgraph NICBOX["NIC"]
+            ESW["Embedded switch"]
+            VT["VLAN tagging"]
+        end
+        VFA --> ESW
+        VFB --> VT
+        VT --> ESW
+        PFD --> ESW
+        ESW --> PORT["Ethernet port"]
+    end
+
+    classDef ovirt fill:#5fb30f,stroke:#000000,stroke-width:2px,color:#000000
+    class VT ovirt
+```
+
+#### OVN (Open Virtual Network)
+
+VMs attach to an **Open vSwitch bridge**. Traffic between hosts is encapsulated with **GENEVE** and sent over the host UDP/IP stack, then out through the NIC driver and Ethernet port.
+
+```mermaid
+flowchart TB
+    subgraph HOST["Host"]
+        VMA["VM"] --> VNA["Virtual NIC driver"]
+        VMB["VM"] --> VNB["Virtual NIC driver"]
+        VNA --> OVS["Open vSwitch Bridge"]
+        VNB --> OVS
+        OVS --> GEN["GENEVE encapsulation"]
+        GEN --> UDP["UDP/IP stack"]
+        UDP --> NICD["NIC driver"]
+        subgraph NICBOX["NIC"]
+            NICD
+        end
+        NICD --> PORT["Ethernet port"]
+    end
+
+    classDef ovirt fill:#5fb30f,stroke:#000000,stroke-width:2px,color:#000000
+    class UDP ovirt
+```
+
+#### Choosing a connectivity option
+
+| Option | Best for | Notes |
+|---|---|---|
+| Linux Bridge | General VM networking, VLANs, bonding | Default and simplest; recommended starting point |
+| SR-IOV | High-throughput or low-latency VMs | Needs an SR-IOV capable NIC with IOMMU/VT-d enabled; VMs bypass the host bridge, so check feature and live-migration limits for your release |
+| OVN | Software-defined overlay networks between hosts | Requires the OVN provider; see the OVN firewall ports (TCP 6642, UDP 6081) in the [firewall allowlist](#6-firewall-port-allowlist); GENEVE adds encapsulation overhead, so plan MTU accordingly |
 
 ---
 
