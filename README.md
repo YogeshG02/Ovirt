@@ -1,4 +1,4 @@
-# oVirt Self-Hosted Engine: 3-Node Cluster with Shared SAN
+# oVirt Self-Hosted Engine: 3-Node Cluster 
 
 A deployment guide for an oVirt virtualization cluster with three hypervisor nodes, a shared SAN (Fibre Channel or iSCSI), and a highly available self-hosted Engine VM.
 
