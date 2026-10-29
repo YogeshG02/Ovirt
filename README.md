@@ -605,8 +605,7 @@ The YAML file must begin with `---`. `he_enable_keycloak: true` means Keycloak i
 If supported by your installed release, the deployment pattern may be:
 
 ```bash
-hosted-engine --deploy --4 \
-  --ansible-extra-vars="@/root/extra-vars.yml"
+hosted-engine --deploy --4   --config-append=/root/ovirt-deploy/answers.conf  --ansible-extra-vars="@/root/extra-vars.yml"
 ```
 
 Verify accepted options with `hosted-engine --help`. Do not assume Oracle-specific variables work with every oVirt release.
